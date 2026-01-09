@@ -1,0 +1,37 @@
+services:
+  # --------------------------------------------------------------------------------
+  # BACKEND SERVICE (Python FastAPI)
+  # --------------------------------------------------------------------------------
+  - type: web
+    name: blog-backend
+    env: python
+    plan: free
+    rootDir: backend
+    # This command installs dependencies, updates the database structure, and creates the admin user
+    buildCommand: "pip install -r requirements.txt && alembic upgrade head && python initial_data.py"
+    # Start the server on port 10000 (Render default)
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port 10000"
+    envVars:
+      - key: DATABASE_URL
+        sync: false # You must paste your Neon Database URL here!
+      - key: SECRET_KEY
+        generateValue: true # Render will generate a secure key for you
+      - key: PYTHON_VERSION
+        value: 3.11.9
+
+  # --------------------------------------------------------------------------------
+  # FRONTEND SERVICE (Next.js)
+  # --------------------------------------------------------------------------------
+  - type: web
+    name: blog-frontend
+    env: node
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: blog-backend
+          property: url
